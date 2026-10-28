@@ -1,0 +1,76 @@
+/* Custom Styles for Smart EV Charging Optimization Dashboard */
+
+@layer utilities {
+    .bg-glass {
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .bg-glass-card {
+        background: rgba(30, 41, 59, 0.65);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .glow-cyan {
+        box-shadow: 0 0 25px rgba(6, 182, 212, 0.35);
+    }
+
+    .glow-green {
+        box-shadow: 0 0 25px rgba(34, 197, 94, 0.4);
+    }
+
+    .glow-red {
+        box-shadow: 0 0 25px rgba(239, 68, 68, 0.45);
+    }
+
+    .text-glow {
+        text-shadow: 0 0 12px rgba(6, 182, 212, 0.6);
+    }
+}
+
+/* Custom Scrollbar for Terminal */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Pulse animation for active charging */
+@keyframes flow-charging {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.animate-charging-flow {
+    background: linear-gradient(270deg, #06b6d4, #10b981, #06b6d4);
+    background-size: 200% 200%;
+    animation: flow-charging 3s ease infinite;
+}
+
+/* Range input styling */
+input[type="range"] {
+    accent-color: #06b6d4;
+}

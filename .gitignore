@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.env*
+venv/
+env/
+.pytest_cache/
+
+# Hardware secrets
+secrets.h
+
+# Node & Node-RED
+node_modules/
+.node-red/
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart EV Charging Schedule Optimization | IoT & MQTT Dashboard</title>
+    
+    <!-- Meta tags for SEO & Sharing -->
+    <meta name="description" content="AI-driven Smart EV Charging Schedule Optimization using Synthetic Data, ESP32 Sensor Telemetry, HiveMQ MQTT, and Node-RED integration.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 850: '#151f32', 950: '#0b1120' },
+                        brand: {
+                            cyan: '#06b6d4',
+                            emerald: '#10b981',
+                            amber: '#f59e0b',
+                            rose: '#f43f5e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- Chart.js & Paho MQTT -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-white">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-gradient-to-tr from-cyan-600 to-emerald-500 text-white shadow-lg shadow-cyan-500/20">
+                    <i data-lucide="zap" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                        Smart EV Charging Optimizer
+                        <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                            IoT + AI Engine
+                        </span>
+                    </h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">ESP32 Sensor Telemetry • HiveMQ MQTT • SciPy Linear Programming</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 sm:gap-4">
+                <!-- MQTT Status Pill -->
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700 text-xs">
+                    <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                    <span id="connection-status" class="text-slate-300 font-medium">Connecting...</span>
+                    <span id="broker-badge" class="hidden md:inline text-slate-500 font-mono text-[11px]">broker.hivemq.com</span>
+                </div>
+
+                <!-- Settings Button -->
+                <button id="btn-open-settings" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="MQTT Settings">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                </button>
+
+                <!-- GitHub Link -->
+                <a href="https://github.com/gsparsh580-coder/smart-ev-charging-optimization" target="_blank" rel="noopener noreferrer"
+                   class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="View Source on GitHub">
+                    <i data-lucide="github" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- TOP STATS / IMPACT BANNER -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- Uncontrolled Cost -->
+            <div class="bg-glass-card p-4 rounded-2xl border border-slate-800 relative overflow-hidden">
+                <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Uncontrolled Cost</div>
+                <div id="cost-uncontrolled" class="text-2xl font-black text-slate-300 mt-1">₹370.93</div>
+                <div class="text-[11px] text-slate-500 mt-1">Immediate peak charging</div>
+            </div>
+
+            <!-- Smart Optimized Cost -->
+            <div class="bg-glass-card p-4 rounded-2xl border border-cyan-500/30 relative overflow-hidden bg-gradient-to-br from-cyan-950/20 to-slate-900">
+                <div class="text-cyan-400 text-xs font-semibold uppercase tracking-wider flex items-center justify-between">
+                    Smart Optimized
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold">ALGO</span>
+                </div>
+                <div id="cost-optimized" class="text-2xl font-black text-cyan-400 mt-1">₹148.37</div>
+                <div class="text-[11px] text-cyan-300/70 mt-1">Scheduled for off-peak & solar</div>
+            </div>
+
+            <!-- Total Savings -->
+            <div class="bg-glass-card p-4 rounded-2xl border border-emerald-500/30 relative overflow-hidden bg-gradient-to-br from-emerald-950/20 to-slate-900">
+                <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider flex items-center justify-between">
+                    Net Savings
+                    <span id="savings-percent" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">60.0% SAVED</span>
+                </div>
+                <div id="cost-savings" class="text-2xl font-black text-emerald-400 mt-1">₹222.56</div>
+                <div class="text-[11px] text-emerald-300/70 mt-1">Money saved per session</div>
+            </div>
+
+            <!-- Carbon & Grid Peak -->
+            <div class="bg-glass-card p-4 rounded-2xl border border-slate-800 relative overflow-hidden">
+                <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">CO2 Emissions Avoided</div>
+                <div id="co2-saved" class="text-2xl font-black text-emerald-400 mt-1">4.71 kg</div>
+                <div class="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                    Peak shaved: <span id="peak-shaved" class="font-bold text-cyan-400">7.4 kW</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2-COLUMN LAYOUT -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT COLUMN: CONTROLS & SENSOR TELEMETRY (5 COLS) -->
+            <div class="lg:col-span-5 space-y-6">
+
+                <!-- 1. BATTERY STATE OF CHARGE CARD -->
+                <div class="bg-glass-card p-6 rounded-3xl border border-slate-800 relative overflow-hidden">
+                    <div id="battery-glow" class="hidden"></div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Battery State of Charge</span>
+                            <div class="flex items-baseline gap-2 mt-1">
+                                <span id="val-battery-soc" class="text-4xl font-extrabold text-white tracking-tight">24.5%</span>
+                                <span id="val-est-range" class="text-sm font-semibold text-cyan-400">~95 km Range</span>
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-2xl bg-slate-800/80 border border-slate-700 text-cyan-400">
+                            <i data-lucide="battery-charging" class="w-7 h-7"></i>
+                        </div>
+                    </div>
+
+                    <!-- Visual Battery Bar -->
+                    <div class="mt-4">
+                        <div class="w-full bg-slate-800/80 rounded-xl h-5 p-1 border border-slate-700 relative overflow-hidden">
+                            <div id="battery-fill" class="h-full rounded-lg bg-gradient-to-r from-amber-500 via-cyan-500 to-emerald-400 transition-all duration-700" style="width: 24.5%;"></div>
+                        </div>
+                        <div class="flex justify-between text-[11px] font-mono text-slate-500 mt-2">
+                            <span>0% (Empty)</span>
+                            <span id="charging-pulse-text" class="text-emerald-400 font-semibold hidden animate-pulse">● CHARGING ACTIVE</span>
+                            <span>Target: <b id="val-target-soc-disp" class="text-slate-300">85%</b></span>
+                            <span>100% (Full)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. CHARGING STATION REMOTE CONTROLS -->
+                <div class="bg-glass-card p-6 rounded-3xl border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div class="flex items-center gap-2">
+                            <div id="relay-led" class="w-3.5 h-3.5 rounded-full bg-slate-500"></div>
+                            <span class="text-sm font-bold text-white">Contactor Actuator</span>
+                        </div>
+                        <span id="relay-status-text" class="text-xs font-semibold text-slate-400">STANDBY (OFF)</span>
+                    </div>
+
+                    <!-- Master Contactor Relay Button -->
+                    <button id="btn-relay-toggle" class="w-full py-3.5 px-4 rounded-2xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="power" class="w-5 h-5"></i>
+                        START CHARGING (RELAY ON)
+                    </button>
+
+                    <!-- Auto vs Manual Mode -->
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-medium text-slate-400">Operation Mode</label>
+                        <div class="flex p-1 bg-slate-900 rounded-xl border border-slate-800 gap-1">
+                            <button id="btn-mode-auto" class="flex-1 py-2 px-3 rounded-lg font-semibold text-sm bg-cyan-600 text-white shadow-md shadow-cyan-600/30">
+                                AUTO (OPTIMIZED)
+                            </button>
+                            <button id="btn-mode-manual" class="flex-1 py-2 px-3 rounded-lg font-semibold text-sm bg-slate-800 text-slate-400 hover:text-white">
+                                MANUAL OVERRIDE
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Target Current Slider -->
+                    <div class="space-y-1.5 pt-1">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Max Pilot Current (J1772)</span>
+                            <span id="val-target-current" class="font-bold text-cyan-400">16 A</span>
+                        </div>
+                        <input id="slider-current" type="range" min="6" max="32" step="1" value="16" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+                        <div class="flex justify-between text-[10px] text-slate-500">
+                            <span>6A (1.4 kW)</span>
+                            <span>16A (3.7 kW)</span>
+                            <span>32A (7.4 kW Level 2)</span>
+                        </div>
+                    </div>
+
+                    <!-- E-Stop & Demo Toggle -->
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+                        <button id="btn-emergency-stop" class="px-3 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 text-xs font-bold transition flex items-center gap-1.5">
+                            <i data-lucide="alert-octagon" class="w-4 h-4"></i>
+                            EMERGENCY TRIP
+                        </button>
+
+                        <!-- Browser Demo Simulator Toggle -->
+                        <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-400 hover:text-white">
+                            <input id="switch-demo" type="checkbox" class="sr-only peer">
+                            <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-600 relative"></div>
+                            <span>Demo Telemetry</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 3. LIVE SENSOR GAUGES GRID -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <!-- Power -->
+                    <div class="bg-glass-card p-3.5 rounded-2xl border border-slate-800 text-center">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase">Power</span>
+                        <div class="text-xl font-black text-cyan-400 mt-1"><span id="val-power">0.00</span> <span class="text-xs font-normal text-slate-500">kW</span></div>
+                    </div>
+
+                    <!-- Voltage -->
+                    <div class="bg-glass-card p-3.5 rounded-2xl border border-slate-800 text-center">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase">Voltage</span>
+                        <div class="text-xl font-black text-slate-200 mt-1"><span id="val-voltage">230.2</span> <span class="text-xs font-normal text-slate-500">V</span></div>
+                    </div>
+
+                    <!-- Current -->
+                    <div class="bg-glass-card p-3.5 rounded-2xl border border-slate-800 text-center">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase">Current</span>
+                        <div class="text-xl font-black text-emerald-400 mt-1"><span id="val-current">0.0</span> <span class="text-xs font-normal text-slate-500">A</span></div>
+                    </div>
+
+                    <!-- Cumulative Energy -->
+                    <div class="bg-glass-card p-3.5 rounded-2xl border border-slate-800 text-center">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase">Energy</span>
+                        <div class="text-xl font-black text-slate-200 mt-1"><span id="val-energy">14.82</span> <span class="text-xs font-normal text-slate-500">kWh</span></div>
+                    </div>
+
+                    <!-- Temperature -->
+                    <div class="bg-glass-card p-3.5 rounded-2xl border border-slate-800 text-center relative">
+                        <div class="flex items-center justify-center gap-1">
+                            <span class="text-[11px] font-semibold text-slate-400 uppercase">Temp</span>
+                            <span id="badge-temp" class="px-1.5 py-0.2 text-[9px] font-bold rounded bg-emerald-500/20 text-emerald-400">OK</span>
+                        </div>
+                        <div class="text-xl font-black text-amber-400 mt-1"><span id="val-temperature">28.5°C</span></div>
+                    </div>
+
+                    <!-- Current Tariff -->
+                    <div class="bg-glass-card p-3.5 rounded-2xl border border-slate-800 text-center">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase">Current Tariff</span>
+                        <div id="val-current-tariff" class="text-base font-black text-amber-400 mt-1">₹6.20/kWh</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: 24-HOUR OPTIMIZATION TIMELINE & CONFIGURATOR (7 COLS) -->
+            <div class="lg:col-span-7 space-y-6">
+
+                <!-- 1. OPTIMIZATION TIMELINE CHART -->
+                <div class="bg-glass-card p-6 rounded-3xl border border-slate-800 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                        <div>
+                            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                                <i data-lucide="line-chart" class="w-5 h-5 text-cyan-400"></i>
+                                24-Hour Smart Optimization Schedule
+                            </h2>
+                            <p class="text-xs text-slate-400">Power allocation vs. Time-of-Use pricing and solar generation</p>
+                        </div>
+                        <button id="btn-trigger-optimize" class="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-400 border border-cyan-500/30 text-xs font-bold transition flex items-center gap-1.5">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                            Re-solve Schedule
+                        </button>
+                    </div>
+
+                    <!-- Chart Container -->
+                    <div class="relative h-72 sm:h-80 w-full">
+                        <canvas id="schedule-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 2. OPTIMIZATION PARAMETERS CONFIGURATOR -->
+                <div class="bg-glass-card p-6 rounded-3xl border border-slate-800 space-y-4">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i>
+                        Vehicle & Grid Optimization Parameters
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Battery Capacity -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs">
+                                <span class="text-slate-400">Battery Capacity</span>
+                                <span id="val-battery-cap-disp" class="font-bold text-white">60 kWh</span>
+                            </div>
+                            <input id="input-battery-cap" type="range" min="20" max="100" step="5" value="60" class="w-full h-2 bg-slate-800 rounded cursor-pointer">
+                        </div>
+
+                        <!-- Target SoC -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs">
+                                <span class="text-slate-400">Target SoC at Departure</span>
+                                <span class="font-bold text-cyan-400">85%</span>
+                            </div>
+                            <input id="input-target-soc" type="range" min="50" max="100" step="5" value="85" class="w-full h-2 bg-slate-800 rounded cursor-pointer">
+                        </div>
+
+                        <!-- Arrival & Departure Time -->
+                        <div class="space-y-1">
+                            <label class="text-xs text-slate-400">Plug-In Arrival Time</label>
+                            <select id="input-arrival" class="w-full py-2 px-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-200">
+                                <option value="16">16:00 (4:00 PM)</option>
+                                <option value="17">17:00 (5:00 PM)</option>
+                                <option value="18" selected>18:00 (6:00 PM - Standard)</option>
+                                <option value="19">19:00 (7:00 PM)</option>
+                                <option value="20">20:00 (8:00 PM)</option>
+                            </select>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-xs text-slate-400">Departure Deadline</label>
+                            <select id="input-departure" class="w-full py-2 px-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-200">
+                                <option value="6">06:00 (6:00 AM)</option>
+                                <option value="7" selected>07:00 (7:00 AM - Morning)</option>
+                                <option value="8">08:00 (8:00 AM)</option>
+                                <option value="9">09:00 (9:00 AM)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Tariff Selector -->
+                    <div class="space-y-1 pt-1">
+                        <label class="text-xs text-slate-400">Electricity Tariff Model</label>
+                        <select id="select-tariff" class="w-full py-2.5 px-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-200">
+                            <option value="standard_tou" selected>3-Tier Time-of-Use (Off-Peak ₹3.50, Shoulder ₹6.20, Peak ₹11.80)</option>
+                            <option value="solar_tou">Solar-Friendly Duck Curve (Solar Sponge ₹2.80, Off-Peak ₹4.20, Peak ₹13.50)</option>
+                            <option value="dynamic_spot">Dynamic Wholesale Spot Market (Real-Time Fluctuating Pricing)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 3. LIVE HIVEMQ MQTT PACKET TERMINAL -->
+                <div class="bg-glass-card p-4 rounded-3xl border border-slate-800 space-y-2">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i>
+                            <span class="text-xs font-bold text-slate-300">HiveMQ MQTT Live Stream</span>
+                        </div>
+                        <button id="btn-clear-logs" class="text-[11px] text-slate-500 hover:text-slate-300 transition">Clear Terminal</button>
+                    </div>
+                    <div id="mqtt-logs" class="h-32 overflow-y-auto space-y-1 font-mono text-xs custom-scrollbar pr-1">
+                        <!-- Streamed messages injected by JS -->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- SETTINGS MODAL -->
+    <div id="modal-settings" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i data-lucide="radio" class="w-5 h-5 text-cyan-400"></i>
+                    HiveMQ MQTT Configuration
+                </h3>
+                <button id="btn-close-settings" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="form-settings" class="space-y-4">
+                <div>
+                    <label class="text-xs text-slate-400">WebSockets Broker Host</label>
+                    <input id="input-broker-host" type="text" value="broker.hivemq.com" class="w-full mt-1 py-2 px-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400">Secure WebSockets Port (WSS)</label>
+                    <input id="input-broker-port" type="number" value="8884" class="w-full mt-1 py-2 px-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                    <span class="text-[10px] text-slate-500">Port 8884 is required for HTTPS GitHub Pages.</span>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400">Topic Prefix</label>
+                    <input id="input-topic-prefix" type="text" value="smart_ev" class="w-full mt-1 py-2 px-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white">
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs transition">
+                        Save & Reconnect
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- INITIALIZE ICONS & SCRIPTS -->
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="js/app.js"></script>
+
+</body>
+</html>
